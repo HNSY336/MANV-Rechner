@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MANV-Rechner</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MANV-Rechner">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#37516b">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>html{-webkit-text-size-adjust:100%}*{box-sizing:border-box}body{margin:0;font-size:14px;padding-top:max(20px,env(safe-area-inset-top,0px))!important;padding-bottom:max(40px,env(safe-area-inset-bottom,0px))!important}</style>
+<style>
+/* Layout: drei Eingabekarten SK I–III mit +/− → Personal → Fahrzeuge → Rechenweg */
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --fg:#1d2a36; --muted:#5b6b7a; --line:#d5dde5;
+  --steel:#3d6b8e; --slate:#37516b; --accent:#d90f1c;
+  --sk1:#c8102e; --sk2:#b38600; --sk3:#2e8b47; --sk1bg:#fbe7ea; --sk2bg:#fdf4d8; --sk3bg:#e4f3e8;
+  --hl:#e3edf5; --font:Arial,"Helvetica Neue",Helvetica,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121a22; --surface:#1a2530; --fg:#e4ebf1; --muted:#9aabbb; --line:#2c3a48;
+  --steel:#7fa9cb; --slate:#c3d3e1; --accent:#ff5a63;
+  --sk1:#ff6b7d; --sk2:#f2c84b; --sk3:#5fc47c; --sk1bg:#3a1c22; --sk2bg:#3a321a; --sk3bg:#1b3324;
+  --hl:#223447; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121a22; --surface:#1a2530; --fg:#e4ebf1; --muted:#9aabbb; --line:#2c3a48;
+  --steel:#7fa9cb; --slate:#c3d3e1; --accent:#ff5a63;
+  --sk1:#ff6b7d; --sk2:#f2c84b; --sk3:#5fc47c; --sk1bg:#3a1c22; --sk2bg:#3a321a; --sk3bg:#1b3324;
+  --hl:#223447; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:900px;margin:0 auto;display:grid;gap:18px}
+header{border-left:4px solid var(--accent);padding-left:12px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--steel);font-weight:700}
+h1{font-size:26px;margin:2px 0 4px;color:var(--slate);text-wrap:balance}
+.sub{color:var(--muted);max-width:68ch;margin:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+h2{font-size:15px;margin:0 0 12px;color:var(--steel);text-transform:uppercase;letter-spacing:.06em}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.sk{border-radius:6px;padding:12px;border-left:5px solid;display:grid;gap:8px}
+.sk.k1{background:var(--sk1bg);border-color:var(--sk1)}
+.sk.k2{background:var(--sk2bg);border-color:var(--sk2)}
+.sk.k3{background:var(--sk3bg);border-color:var(--sk3)}
+.sk label{font-size:13px;font-weight:700;letter-spacing:.03em}
+.sk .hint{font-size:12px;color:var(--muted)}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:40px;height:40px;border-radius:4px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:700 20px var(--font);cursor:pointer}
+.step button:hover{border-color:var(--steel)}
+.step input{width:72px;text-align:center;font:700 24px var(--font);padding:4px;border:2px solid var(--steel);border-radius:4px;background:var(--surface);color:var(--fg);font-variant-numeric:tabular-nums}
+.c1{color:var(--sk1)}.c2{color:var(--sk2)}.c3{color:var(--sk3)}
+.sum{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:12px;font-size:14px}
+.sum b{font-size:18px}
+.pill{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--hl);font-weight:700}
+.toggle{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--muted);margin-top:12px}
+.toggle input{margin-top:3px;accent-color:var(--steel)}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.res div{border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.res .lab{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.res .num{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.res .total{background:var(--hl);border-color:var(--steel)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--steel);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+th:first-child,td:first-child{text-align:left}
+tfoot td{font-weight:700;border-top:2px solid var(--steel);border-bottom:none}
+.how{font-size:13px;color:var(--muted);margin:10px 0 0}
+.rules{font-size:13px;color:var(--muted);display:grid;gap:4px;margin:0;padding-left:18px}
+.reset{font:700 13px var(--font);padding:6px 12px;border-radius:4px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:600px){.grid3{grid-template-columns:1fr}h1{font-size:22px}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">stiwl · Fachbereich Medizin und Rettungswesen</div>
+    <h1>MANV-Sichtungsrechner</h1>
+    <p class="sub">Trage die Anzahl der Patient:innen je Sichtungskategorie ein. Der Rechner zeigt das Personal für die Erstversorgung und die daraus abgeleiteten Fahrzeuge. Beispielwerte: 3 / 5 / 9.</p>
+  </header>
+
+  <section class="panel">
+    <h2>Sichtungsergebnis</h2>
+    <div class="grid3">
+      <div class="sk k1"><label for="i1" class="c1">SK I · rot</label><span class="hint">vitale Bedrohung (inkl. SK IV)</span>
+        <div class="step"><button type="button" data-t="i1" data-d="-1" aria-label="SK I verringern">−</button><input id="i1" type="number" min="0" max="500" value="3" inputmode="numeric"><button type="button" data-t="i1" data-d="1" aria-label="SK I erhöhen">+</button></div></div>
+      <div class="sk k2"><label for="i2" class="c2">SK II · gelb</label><span class="hint">schwer verletzt</span>
+        <div class="step"><button type="button" data-t="i2" data-d="-1" aria-label="SK II verringern">−</button><input id="i2" type="number" min="0" max="500" value="5" inputmode="numeric"><button type="button" data-t="i2" data-d="1" aria-label="SK II erhöhen">+</button></div></div>
+      <div class="sk k3"><label for="i3" class="c3">SK III · grün</label><span class="hint">leicht verletzt</span>
+        <div class="step"><button type="button" data-t="i3" data-d="-1" aria-label="SK III verringern">−</button><input id="i3" type="number" min="0" max="500" value="9" inputmode="numeric"><button type="button" data-t="i3" data-d="1" aria-label="SK III erhöhen">+</button></div></div>
+    </div>
+    <div class="sum">
+      <span>Gesamt: <b id="tot"></b> Patient:innen</span>
+      <span class="pill" id="stage"></span>
+      <span id="dist" class="how" style="margin:0"></span>
+      <button type="button" class="reset" id="reset">Zurücksetzen</button>
+    </div>
+    <label class="toggle"><input type="checkbox" id="nef" checked>
+      <span>NotSan des NEF in die SK-II-Versorgung einrechnen (abwählen, wenn die NEF-Besatzung mit OrgL-/Führungsaufgaben gebunden ist)</span></label>
+  </section>
+
+  <section class="panel">
+    <h2>Personal für die Erstversorgung</h2>
+    <div class="res">
+      <div><div class="lab">Notärzt:innen</div><div class="num" id="pNA"></div></div>
+      <div><div class="lab">NotSan</div><div class="num" id="pNS"></div></div>
+      <div><div class="lab">RS</div><div class="num" id="pRS"></div></div>
+      <div><div class="lab">RS / RH</div><div class="num" id="pRH"></div></div>
+      <div class="total"><div class="lab">Gesamt</div><div class="num" id="pT"></div></div>
+    </div>
+    <div class="tbl" style="margin-top:14px">
+      <table>
+        <thead><tr><th>Kategorie</th><th>Pat.</th><th>NA</th><th>NotSan</th><th>RS</th><th>RS/RH</th></tr></thead>
+        <tbody id="tb"></tbody>
+        <tfoot><tr id="tf"></tr></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Abgeleitete Fahrzeuge</h2>
+    <div class="res">
+      <div><div class="lab">NEF</div><div class="num" id="vNEF"></div></div>
+      <div><div class="lab">RTW</div><div class="num" id="vRTW"></div></div>
+      <div><div class="lab">KTW</div><div class="num" id="vKTW"></div></div>
+    </div>
+    <p class="how" id="vhow"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Rechenregeln</h2>
+    <ul class="rules">
+      <li>SK I je Patient:in: 0,5 Notärzt:in + 1 NotSan + 1 RS (entspricht einer RTW-Besatzung). SK IV wird bei SK I mitgezählt.</li>
+      <li>SK II je Patient:in: 0,5 NotSan + 1 RS</li>
+      <li>SK III je Patient:in: 0,5 RS/RH (1 Kraft je 2 Patient:innen)</li>
+      <li>Jede Kategorie wird für sich aufgerundet, Personal ist nicht teilbar.</li>
+      <li>Fahrzeuge: NEF = Anzahl Notärzt:innen. RTW = SK I + fehlende NotSan für SK II. KTW mit 2 Kräften (RS/RH) für das übrige Personal. Der RS auf dem RTW für SK I wird nicht für andere Kategorien gezählt.</li>
+      <li>Reine Personalrechnung für die Erstversorgung. Führungsfunktionen und Transportkapazität sind zusätzlich zu planen.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id), ceil=Math.ceil;
+const val=id=>{const v=parseInt($(id).value,10);return isNaN(v)||v<0?0:Math.min(500,v)};
+function stage(n){return n===0?"keine Patient:innen":n<=10?"MANV 10 (Stiwlfeld)":n<=25?"MANV 25 (Stiwlfeld)":n<=50?"MANV 50 (Stiwlfeld)":"über MANV 50"}
+const pct=(a,n)=>n?Math.round(a/n*100)+" %":"–";
+function render(){
+  const s1=val("i1"),s2=val("i2"),s3=val("i3"),n=s1+s2+s3;
+  const na=ceil(s1*0.5), nsII=ceil(s2*0.5), ns=s1+nsII, rs=s1+s2, rh=ceil(s3*0.5), total=na+ns+rs+rh;
+  const nefNS=$("nef").checked?na:0, extra=Math.max(0,nsII-nefNS), rtw=s1+extra, rest=Math.max(0,s2-extra)+rh, ktw=ceil(rest/2);
+  $("tot").textContent=n; $("stage").textContent=stage(n);
+  $("dist").textContent=`Verteilung ${pct(s1,n)} / ${pct(s2,n)} / ${pct(s3,n)} (Planung 20/30/50)`;
+  $("pNA").textContent=na;$("pNS").textContent=ns;$("pRS").textContent=rs;$("pRH").textContent=rh;$("pT").textContent=total;
+  $("tb").innerHTML=
+    `<tr><td class="c1">SK I</td><td>${s1}</td><td>${na}</td><td>${s1}</td><td>${s1}</td><td>–</td></tr>`+
+    `<tr><td class="c2">SK II</td><td>${s2}</td><td>–</td><td>${nsII}</td><td>${s2}</td><td>–</td></tr>`+
+    `<tr><td class="c3">SK III</td><td>${s3}</td><td>–</td><td>–</td><td>–</td><td>${rh}</td></tr>`;
+  $("tf").innerHTML=`<td>Summe</td><td>${n}</td><td>${na}</td><td>${ns}</td><td>${rs}</td><td>${rh}</td>`;
+  $("vNEF").textContent=na;$("vRTW").textContent=rtw;$("vKTW").textContent=ktw;
+  $("vhow").textContent=`RTW: ${s1} für SK I + ${extra} für fehlende SK-II-NotSan (${nsII} benötigt, ${nefNS} vom NEF) · KTW: ${rest} weitere RS bzw. RS/RH ÷ 2 → ${ktw}`;
+}
+document.querySelectorAll(".step button").forEach(b=>b.addEventListener("click",()=>{const id=b.dataset.t;$(id).value=Math.max(0,val(id)+ +b.dataset.d);render()}));
+["i1","i2","i3"].forEach(id=>$(id).addEventListener("input",render));
+$("nef").addEventListener("change",render);
+$("reset").addEventListener("click",()=>{["i1","i2","i3"].forEach(id=>$(id).value=0);render()});
+render();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}
+</script>
+</body>
+</html>
